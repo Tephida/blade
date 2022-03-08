@@ -5,7 +5,7 @@ namespace Tephida\View\Compilers\Concerns;
 
 /**
  * Trait CompilesLayouts
- * @package Sura\View\Compilers\Concerns
+ * @package Tephida\View\Compilers\Concerns
  */
 trait  CompilesLayouts
 {

@@ -5,7 +5,7 @@ namespace Tephida\View;
 
 /**
  * Trait Lang
- * @package Sura\View
+ * @package Tephida\View
  */
 trait Lang
 {
