@@ -1,20 +1,20 @@
 # Blade Template Engine
 
-Sura\View is a standalone version of Blade Template Engine that uses a single PHP file and can be ported and used in
+Tephida\View is a standalone version of Blade Template Engine that uses a single PHP file and can be ported and used in
 different projects. It allows you to use blade template outside Laravel.
 
 ## Usage
 
 If you use **composer**, then you could add the library using the next command (command line)
 
-> composer require sura/view
+> composer require tephida/view
 
 If you don't use it, then you could download the library and include it manually.
 
 ### Implicit definition
 
 ```php
-use Sura\View\View;
+use Tephida\View\View;
 
 $views = __DIR__ . '/views';
 $cache = __DIR__ . '/cache';

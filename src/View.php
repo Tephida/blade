@@ -476,7 +476,7 @@ class View
      *
      * @param bool $bool
      * @return View
-     * @see \Sura\Libs\Blade::setMode
+     * @see \Tephida\Libs\Blade::setMode
      */
     public function setIsCompiled($bool = false)
     {
@@ -641,10 +641,10 @@ class View
      *
      * @return string
      *
-     * @see \Sura\Libs\Blade::compileStatements
-     * @see \Sura\Libs\Blade::compileExtends
-     * @see \Sura\Libs\Blade::compileComments
-     * @see \Sura\Libs\Blade::compileEchos
+     * @see \Tephida\Libs\Blade::compileStatements
+     * @see \Tephida\Libs\Blade::compileExtends
+     * @see \Tephida\Libs\Blade::compileComments
+     * @see \Tephida\Libs\Blade::compileEchos
      */
     protected function parseToken($token)
     {
