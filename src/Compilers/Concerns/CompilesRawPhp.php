@@ -25,7 +25,7 @@ trait CompilesRawPhp
      */
     protected function compilePhp(string $expression): string
     {
-        return $expression ? $this->phpTag . "{$expression}; ?>" : $this->phpTag . '';
+        return $expression ? $this->phpTag . "{$expression}; ?>" : $this->phpTag;
     }
 
     /**
