@@ -11,6 +11,8 @@ use Exception;
 use InvalidArgumentException;
 use JetBrains\PhpStorm\ArrayShape;
 use JetBrains\PhpStorm\Pure;
+use ParseError;
+use ReflectionMethod;
 
 /**
  * View - A View Template implementation
@@ -19,7 +21,6 @@ use JetBrains\PhpStorm\Pure;
  */
 class View
 {
-
     use Compilers\Concerns\CompilesAuthorizations,
         Compilers\Concerns\CompilesComments,
         Compilers\Concerns\CompilesComponents,
@@ -46,12 +47,12 @@ class View
     /** @var array Hold dictionary of translations */
     public static array $dictionary = [];
     /** @var string PHP tag. You could use < ?php or < ? (if shorttag is active in php.ini) */
-    public string $phpTag = '<?php '; // hello hello hello.
+    public string $phpTag = '<?php ';
     /** @var string */
     public string $phpTagEcho = '<?php echo ';
     /** @var string $currentUser Current user. Example: john */
     public string $currentUser;
-    /** @var string $currentRole Current role. Example: admin */
+    /** @var string|null $currentRole Current role. Example: admin */
     public string|null $currentRole;
     /** @var string[] $currentPermission Current permission. Example ['edit','add'] */
     public array $currentPermission = [];
@@ -208,7 +209,10 @@ class View
         $this->templatePath = (is_array($templatePath)) ? $templatePath : [$templatePath];
         $this->compiledPath = $compiledPath;
         $this->setMode($mode);
-        $this->authCallBack = function ($action = null, /** @noinspection PhpUnusedParameterInspection */ $subject = null) {
+        $this->authCallBack = function (
+            $action = null, /** @noinspection PhpUnusedParameterInspection */
+            $subject = null
+        ) {
             return \in_array($action, $this->currentPermission, true);
         };
 
@@ -221,7 +225,10 @@ class View
             return false;
         };
 
-        $this->errorCallBack = static function (/** @noinspection PhpUnusedParameterInspection */ $key = null) {
+        $this->errorCallBack = static function (
+            /** @noinspection PhpUnusedParameterInspection */
+            $key = null
+        ) {
             return false;
         };
 
@@ -300,15 +307,15 @@ class View
     /**
      * Escape HTML entities in a string.
      *
-     * @param string $value
+     * @param string|array|object $value
      * @return string
      */
-    public static function e($value)
+    public static function e(string|array|object $value): string
     {
 //        return (\is_array($value) || \is_object($value))
 //            ? \htmlentities(\print_r($value, true), ENT_QUOTES, 'UTF-8', false)
 //            : \htmlentities($value, ENT_QUOTES, 'UTF-8', false);
-        return (\is_array($value) || \is_object($value))
+        return (is_array($value) || is_object($value))
             ? \print_r($value, true)
             : $value;
     }
@@ -316,16 +323,16 @@ class View
     /**
      * Escape HTML entities in a string.
      *
-     * @param string $value
+     * @param string|array|object $value
      * @return string
      */
-    public static function enq($value)
+    public static function enq(string|array|object $value): string
     {
 //        if (\is_array($value) || \is_object($value)) {
 //            return \htmlentities(\print_r($value, true), ENT_NOQUOTES, 'UTF-8', false);
 //        }
 //        return \htmlentities($value, ENT_NOQUOTES, 'UTF-8', false);
-        if (\is_array($value) || \is_object($value)) {
+        if (is_array($value) || is_object($value)) {
             return \print_r($value, true);
         }
         return $value;
@@ -407,8 +414,8 @@ class View
     public function addInclude($view, $alias = null)
     {
         if (!isset($alias)) {
-            $alias = \explode('.', $view);
-            $alias = \end($alias);
+            $alias = explode('.', $view);
+            $alias = end($alias);
         }
         $this->directive($alias, function ($expression) use ($view) {
             $expression = $this->stripParentheses($expression) ?: '[]';
@@ -427,20 +434,6 @@ class View
     {
         $this->customDirectives[$name] = $handler;
         $this->customDirectivesRT[$name] = false;
-    }
-
-    /**
-     * Strip the parentheses from the given expression.
-     *
-     * @param string $expression
-     * @return string FIXME
-     */
-    public function stripParentheses(mixed $expression): mixed
-    {
-        if (static::startsWith($expression, '(')) {
-            $expression = \substr($expression, 1, -1);
-        }
-        return $expression;
     }
 
     /**
@@ -476,7 +469,7 @@ class View
      *
      * @param bool $bool
      * @return View
-     * @see \Tephida\Libs\Blade::setMode
+     * @see \Tephida\View::setMode
      */
     public function setIsCompiled($bool = false)
     {
@@ -1169,7 +1162,7 @@ class View
     protected function methodExistsStatic($class, $method)
     {
         try {
-            $mc = new \ReflectionMethod($class, $method);
+            $mc = new ReflectionMethod($class, $method);
             return $mc->isStatic();
         } catch (\ReflectionException $e) {
             return false;
@@ -1366,7 +1359,7 @@ class View
     {
         \ob_start();
         \extract($variables);
-        // We'll evaluate the contents of the view inside a try/catch block so we can
+        // We'll evaluate the contents of the view inside a try/catch block, so we can
         // flush out any stray output that might get out before an error occurs or
         // an exception is thrown. This prevents any partial views from leaking.
         try {
@@ -1404,11 +1397,10 @@ class View
         // note, the variables are extracted locally inside this method,
         // they are not global variables :-3
         \extract($variables);
-        // We'll evaluate the contents of the view inside a try/catch block so we can
+        // We'll evaluate the contents of the view inside a try/catch block, so we can
         // flush out any stray output that might get out before an error occurs or
         // an exception is thrown. This prevents any partial views from leaking.
         try {
-            /** @noinspection PhpIncludeInspection */
             include $compiledFile;
         } catch (Exception $e) {
             $this->handleViewException($e);
@@ -2469,8 +2461,8 @@ class View
         if (!$this->missingLog) {
             return; // if there is not a file assigned then it skips saving.
         }
-        $fz = @\filesize($this->missingLog);
-        if (\is_object($txt) || \is_array($txt)) {
+        $fz = filesize($this->missingLog);
+        if (is_object($txt) || is_array($txt)) {
             $txt = \print_r($txt, true);
         }
         // Rewrite file if more than 100000 bytes
@@ -2643,7 +2635,7 @@ class View
                 // @@escaped tag
                 $match[0] = isset($match[3]) ? $match[1] . $match[3] : $match[1];
             } else {
-                if (strpos($match[1], '::') !== false) {
+                if (str_contains($match[1], '::')) {
                     // Someclass::method
                     return $this->compileStatementClass($match);
                 }
@@ -2660,12 +2652,6 @@ class View
                     // it calls the function compile<name of the tag>
                     $match[0] = $this->$method(static::get($match, '3'));
                 } else {
-                    /*echo "<pre>";
-                    var_dump($match);
-                    echo "</pre>";
-                    echo "operation not defined!";
-                    */
-                    //todo: $this->showError("@compile", "Operation not defined:@".$match[1], true);
                     return $match[0];
                 }
             }
@@ -2906,7 +2892,7 @@ class View
 
         $prev = '';
         for ($i = $c; $i >= 1; $i--) {
-            $r = @explode(':', $array[$i], 2);
+            $r = explode(':', $array[$i], 2);
             $fnName = trim($r[0]);
             $fnNameF = $fnName[0]; // first character
             if ($fnNameF === '"' || $fnNameF === '\'' || $fnNameF === '$' || is_numeric($fnNameF)) {
@@ -2938,14 +2924,33 @@ class View
     }
 
     /**
+     * Strip the parentheses from the given expression.
+     *
+     * @param string|null $expression
+     * @return string
+     */
+    public function stripParentheses($expression): string
+    {
+        if (\is_null($expression)) {
+            return '';
+        }
+
+        if (static::startsWith($expression, '(')) {
+            $expression = \substr($expression, 1, -1);
+        }
+
+        return $expression;
+    }
+
+    /**
      * @param $expression
      * @return string
      */
     protected function compileSet($expression): string
     {
-        //$segments = explode('=', preg_replace("/[\(\)\\\"\']/", '', $expression));
-        //$segments = \explode('=', \preg_replace("/[\(\)\\\']/", '', $expression));
-        $segments = \explode('=', \preg_replace("/[()\\\']/", '', $expression));
+
+//        $segments = \explode('=', \preg_replace("/[()\\\']/", '', $expression));
+        $segments = \explode('=', $this->stripParentheses($expression));
         $value = (\count($segments) >= 2) ? ' =@' . $segments[1] : '++';
         return $this->phpTag . \trim($segments[0]) . $value . '; ?>';
     }
